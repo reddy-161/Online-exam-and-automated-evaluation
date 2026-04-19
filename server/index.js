@@ -52,12 +52,13 @@ app.get('/api/health', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
+app.use((req, res) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (0.0.0.0)`);
+app.listen(PORT,  () => {
+    console.log(`Server running on port ${PORT}`);
 });
 
 // Catch-all route for any request that doesn't match the API (Production)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
-});
+
