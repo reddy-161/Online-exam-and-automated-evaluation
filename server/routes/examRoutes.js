@@ -186,7 +186,9 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
         const [exam] = await pool.execute('SELECT subject_id, total_marks, exam_date, start_time, end_time FROM exams WHERE id = ?', [req.params.id]);
         if (exam.length === 0) return res.status(404).json({ message: 'Exam not found' });
         
-        const now = new Date();
+        const now = new Date(
+  new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+);
 
         // Check if this student has a personal rescheduled window
         const [rescheduleRow] = await pool.execute(
@@ -213,8 +215,13 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
 
         }
 
-        const examStart = new Date(`${examDateStr}T${startTime}`);
-        const examEnd = new Date(`${examDateStr}T${endTime}`);
+        const examStart = new Date(
+  new Date(`${examDateStr}T${startTime}`).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+);
+
+const examEnd = new Date(
+  new Date(`${examDateStr}T${endTime}`).toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+);
 
         console.log(`[Exam Check] Student: ${req.user.id}, Exam: ${req.params.id}`);
         console.log(`[Exam Check] Now: ${now.toISOString()}`);
