@@ -105,70 +105,125 @@ router.post('/attempt/:attemptId/save', authenticateToken, requireRole('student'
 /**
  * @route   POST /api/exams/attempt/:attemptId/submit
  */
+```javascript
 router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('student'), async (req, res) => {
     try {
         const attemptId = req.params.attemptId;
 
-        const [attempt] = await pool.execute('SELECT status FROM exam_attempts WHERE id = ?', [attemptId]);
+        // Check attempt
+        const [attempt] = await pool.execute(
+            'SELECT status FROM exam_attempts WHERE id = ?',
+            [attemptId]
+        );
+
         if (!attempt.length || attempt[0].status === 'completed') {
             return res.status(400).json({ message: 'Exam already submitted or invalid attempt' });
         }
 
-        const [answers] = await pool.execute('SELECT * FROM answers WHERE attempt_id = ?', [attemptId]);
+        const [answers] = await pool.execute(
+            'SELECT * FROM answers WHERE attempt_id = ?',
+            [attemptId]
+        );
+
         let totalScore = 0;
 
         for (const ans of answers) {
             if (!ans.selected_option && !ans.text_answer) continue;
-            const [qRes] = await pool.execute('SELECT type, correct_option, text_answer, marks FROM exam_questions WHERE id = ?', [ans.question_id]);
+
+            const [qRes] = await pool.execute(
+                'SELECT type, correct_option, text_answer, marks FROM exam_questions WHERE id = ?',
+                [ans.question_id]
+            );
+
             const q = qRes[0];
             if (!q) continue;
 
             let isCorrect = false;
+
+            // ✅ MCQ / TRUE-FALSE
             if (q.type === 'mcq' || q.type === 'tf' || q.type === 'true_false') {
-                // Trim + lowercase both sides to handle any casing differences
-                const studentAns = (ans.selected_option || '').trim().toLowerCase();
-                const correctAns = (q.correct_option || '').trim().toLowerCase();
+
+                const normalize = (val) =>
+                    (val || '')
+                        .toString()
+                        .trim()
+                        .toLowerCase()
+                        .replace("option_", "")
+                        .replace("option ", "");
+
+                const studentAns = normalize(ans.selected_option);
+                const correctAns = normalize(q.correct_option);
+
+                console.log("Student Answer:", studentAns);
+                console.log("Correct Answer:", correctAns);
+
                 isCorrect = studentAns !== '' && studentAns === correctAns;
-            } else if (q.type === 'fib') {
-                const stdAns = (ans.text_answer || '').trim().toLowerCase();
-                const correctAns = (q.text_answer || '').trim().toLowerCase();
-                isCorrect = stdAns === correctAns && stdAns !== '';
             }
 
-            if (isCorrect) totalScore += q.marks;
-            await pool.execute('UPDATE answers SET is_correct = ? WHERE id = ?', [isCorrect, ans.id]);
+            // ✅ FILL IN THE BLANK
+            else if (q.type === 'fib') {
+                const studentAns = (ans.text_answer || '').trim().toLowerCase();
+                const correctAns = (q.text_answer || '').trim().toLowerCase();
+
+                isCorrect = studentAns !== '' && studentAns === correctAns;
+            }
+
+            // ✅ Add marks
+            if (isCorrect) {
+                totalScore += q.marks;
+            }
+
+            // ✅ Update answer correctness
+            await pool.execute(
+                'UPDATE answers SET is_correct = ? WHERE id = ?',
+                [isCorrect, ans.id]
+            );
         }
 
+        // ✅ Update attempt
         await pool.execute(
             "UPDATE exam_attempts SET end_time = CURRENT_TIMESTAMP, status = 'completed', score = ? WHERE id = ?",
             [totalScore, attemptId]
         );
 
-        const [attemptInfo] = await pool.execute('SELECT student_id FROM exam_attempts WHERE id = ?', [attemptId]);
+        // ✅ Insert result
+        const [attemptInfo] = await pool.execute(
+            'SELECT student_id FROM exam_attempts WHERE id = ?',
+            [attemptId]
+        );
+
         await pool.execute(
             'INSERT INTO results (attempt_id, student_id, total_score) VALUES (?, ?, ?)',
             [attemptId, attemptInfo[0].student_id, totalScore]
         );
 
-        // Clear reschedule flag now that student has retaken the exam
-        const [examRow] = await pool.execute('SELECT exam_id FROM exam_attempts WHERE id = ?', [attemptId]);
-        if (examRow.length > 0) {
-            await pool.execute(
-                'DELETE FROM exam_reschedules WHERE exam_id = ? AND student_id = ?',
-                [examRow[0].exam_id, attemptInfo[0].student_id]
-            );
-        }
+        // ✅ Get total marks
+        const [examRow] = await pool.execute(
+            'SELECT exam_id FROM exam_attempts WHERE id = ?',
+            [attemptId]
+        );
 
-        // Fetch total marks to return to frontend
-        const [examData] = await pool.execute('SELECT total_marks FROM exams WHERE id = ?', [examRow[0].exam_id]);
+        const [examData] = await pool.execute(
+            'SELECT total_marks FROM exams WHERE id = ?',
+            [examRow[0].exam_id]
+        );
+
         const totalMarks = examData[0]?.total_marks || 0;
 
-        res.json({ message: 'Exam submitted successfully', score: totalScore, totalMarks });
+        // ✅ Final response
+        res.json({
+            message: 'Exam submitted successfully',
+            score: totalScore,
+            totalMarks
+        });
+
     } catch (error) {
         console.error('Error submitting exam:', error);
         res.status(500).json({ message: 'Server error submitting exam' });
     }
 });
+```
+
 
 /**
  * @route   POST /api/exams/:id/attempt
