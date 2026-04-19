@@ -68,7 +68,7 @@ router.get('/student/results', authenticateToken, requireRole('student'), async 
         res.json(results);
     } catch (error) {
         console.error('Error fetching student results:', error);
-        res.status(500).json({ message: 'Server error fetching results' });
+        res.status(500).json({ message: error.message });
     }
 });
 
