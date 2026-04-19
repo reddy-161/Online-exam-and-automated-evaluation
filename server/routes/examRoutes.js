@@ -251,14 +251,28 @@ router.post('/', authenticateToken, requireRole('teacher'), async (req, res) => 
     const connection = await pool.getConnection();
     try {
         const { subject_id, title, exam_date, start_time, end_time, questions, allowed_section } = req.body;
+
+        // ✅ VALIDATION
+        if (!subject_id || !title || !exam_date || !start_time || !end_time) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
+
+        if (!questions || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ message: "Questions are required" });
+        }
+
         await connection.beginTransaction();
+
         const totalMarks = questions.reduce((sum, q) => sum + parseInt(q.marks || 1), 0);
+
         const [result] = await connection.execute(
             `INSERT INTO exams (subject_id, teacher_id, title, exam_date, start_time, end_time, total_marks, status, allowed_section) 
              VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)`,
             [subject_id, req.user.id, title, exam_date, start_time, end_time, totalMarks, allowed_section || '']
         );
+
         const examId = result.insertId;
+
         for (const q of questions) {
             await connection.execute(
                 `INSERT INTO exam_questions (exam_id, type, text_answer, content, option_a, option_b, option_c, option_d, correct_option, marks)
@@ -266,12 +280,18 @@ router.post('/', authenticateToken, requireRole('teacher'), async (req, res) => 
                 [examId, q.type || 'mcq', q.text_answer || null, q.content, q.option_a || null, q.option_b || null, q.option_c || null, q.option_d || null, q.correct_option || null, q.marks || 1]
             );
         }
+
         await connection.commit();
-        res.status(201).json({ message: 'Exam created successfully', exam: { id: examId, title, status: 'draft' } });
+
+        res.status(201).json({
+            message: 'Exam created successfully',
+            exam: { id: examId, title, status: 'draft' }
+        });
+
     } catch (error) {
         await connection.rollback();
         console.error('Error creating exam:', error);
-        res.status(500).json({ message: 'Server error creating exam' });
+        res.status(500).json({ message: error.message }); // ✅ FIXED
     } finally {
         connection.release();
     }
