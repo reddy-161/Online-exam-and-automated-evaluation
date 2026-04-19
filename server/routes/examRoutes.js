@@ -36,7 +36,7 @@ router.get('/', authenticateToken, async (req, res) => {
         }
     } catch (error) {
         console.error('Error fetching exams:', error);
-        res.status(500).json({ message: 'Server error fetching exams' });
+        res.status(500).json({ message: error.message });
     }
 });
 
