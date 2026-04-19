@@ -105,12 +105,12 @@ router.post('/attempt/:attemptId/save', authenticateToken, requireRole('student'
 /**
  * @route   POST /api/exams/attempt/:attemptId/submit
  */
-```javascript
+
 router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('student'), async (req, res) => {
     try {
         const attemptId = req.params.attemptId;
 
-        // Check attempt
+        // ✅ Check attempt
         const [attempt] = await pool.execute(
             'SELECT status FROM exam_attempts WHERE id = ?',
             [attemptId]
@@ -120,6 +120,7 @@ router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('studen
             return res.status(400).json({ message: 'Exam already submitted or invalid attempt' });
         }
 
+        // ✅ Get all answers
         const [answers] = await pool.execute(
             'SELECT * FROM answers WHERE attempt_id = ?',
             [attemptId]
@@ -141,29 +142,30 @@ router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('studen
             let isCorrect = false;
 
             // ✅ MCQ / TRUE-FALSE
-            if (q.type === 'mcq' || q.type === 'tf' || q.type === 'true_false') {
+            // ✅ MCQ / TRUE-FALSE (FINAL STABLE)
+if (q.type === 'mcq' || q.type === 'tf' || q.type === 'true_false') {
 
-                const normalize = (val) =>
-                (val || '')
-                    .toString()
-                    .trim()
-                    .toLowerCase()
-                    .replace(/option[_ ]?/g, '')
-                    .replace(/[^a-z0-9]/g, '');
+    const normalize = (val) =>
+        (val || '')
+            .toString()
+            .trim()
+            .toLowerCase()
+            .replace(/option[_ ]?/g, '')
+            .replace(/[^a-z0-9]/g, '');
 
-                const studentAns = normalize(ans.selected_option);
-                const correctAns = normalize(q.correct_option);
+    const studentAns = normalize(ans.selected_option);
+    const correctAns = normalize(q.correct_option);
 
-                console.log("Student Answer:", studentAns);
-                console.log("Correct Answer:", correctAns);
+    console.log("Student:", studentAns);
+    console.log("Correct:", correctAns);
 
-                isCorrect = studentAns !== '' && studentAns === correctAns;
-            }
+    isCorrect = studentAns !== '' && studentAns === correctAns;
+}
 
             // ✅ FILL IN THE BLANK
             else if (q.type === 'fib') {
-                const studentAns = (ans.text_answer || '').trim().toLowerCase();
-                const correctAns = (q.text_answer || '').trim().toLowerCase();
+                const studentAns = (ans.text_answer || '').toString().trim().toLowerCase();
+                const correctAns = (q.text_answer || '').toString().trim().toLowerCase();
 
                 isCorrect = studentAns !== '' && studentAns === correctAns;
             }
@@ -173,7 +175,7 @@ router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('studen
                 totalScore += q.marks;
             }
 
-            // ✅ Update answer correctness
+            // ✅ Save correctness
             await pool.execute(
                 'UPDATE answers SET is_correct = ? WHERE id = ?',
                 [isCorrect, ans.id]
@@ -222,7 +224,8 @@ router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('studen
         res.status(500).json({ message: 'Server error submitting exam' });
     }
 });
-```
+
+
 
 
 /**
