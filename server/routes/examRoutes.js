@@ -246,7 +246,7 @@ exam: { duration_minutes: durationMinutes, end_time: endTime, exam_date: examDat
         });
     } catch (error) {
         console.error('Error starting exam:', error);
-        res.status(500).json({ message: 'Server error starting exam' });
+        res.status(500).json({ message:  error.message });
     }
 });
 
