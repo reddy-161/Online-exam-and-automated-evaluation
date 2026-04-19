@@ -144,12 +144,12 @@ router.post('/attempt/:attemptId/submit', authenticateToken, requireRole('studen
             if (q.type === 'mcq' || q.type === 'tf' || q.type === 'true_false') {
 
                 const normalize = (val) =>
-                    (val || '')
-                        .toString()
-                        .trim()
-                        .toLowerCase()
-                        .replace("option_", "")
-                        .replace("option ", "");
+                (val || '')
+                    .toString()
+                    .trim()
+                    .toLowerCase()
+                    .replace(/option[_ ]?/g, '')
+                    .replace(/[^a-z0-9]/g, '');
 
                 const studentAns = normalize(ans.selected_option);
                 const correctAns = normalize(q.correct_option);
