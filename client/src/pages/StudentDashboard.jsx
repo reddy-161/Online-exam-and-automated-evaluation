@@ -11,7 +11,23 @@ import ResultsView from '../components/Student/ResultsView';
 import StudentProfile from '../components/Student/StudentProfile';
 import SettingsView from '../components/Student/Settings';
 
+
 const StudentDashboard = () => {
+    const [exams, setExams] = useState([]);
+
+useEffect(() => {
+  const fetchExams = async () => {
+    try {
+      const res = await api.get("/exams");
+      console.log("EXAMS:", res.data);
+      setExams(res.data);
+    } catch (err) {
+      console.error("Error fetching exams:", err);
+    }
+  };
+
+  fetchExams();
+}, []);
     const navigate = useNavigate();
     const [user, setUser] = useState(() => {
         const storedUser = localStorage.getItem('user');

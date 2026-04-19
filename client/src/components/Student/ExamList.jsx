@@ -58,11 +58,11 @@ const ExamList = ({ onStartExam }) => {
                             dateStr = new Date(exam.exam_date).toLocaleDateString();
                         }
 
-                        if (exam.attempt_status || isClosed) {
+                       // if (exam.attempt_status || isClosed) {
                             // "if student attempted or submitted [...] doesn't show again"
                             // "if it is time end time is completed [...] doesn't show again"
-                            return null;
-                        }
+                       //     return null;
+                       // }
 
                         return (
                             <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px', borderLeft: isOpen ? '4px solid var(--success)' : (isClosed ? '4px solid var(--error)' : '4px solid var(--text-secondary)') }}>

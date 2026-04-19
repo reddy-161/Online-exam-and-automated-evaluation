@@ -201,9 +201,16 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
             endTime = rescheduleRow[0].end_time;
         } else {
             const [examDataRow] = await pool.execute("SELECT DATE_FORMAT(exam_date, '%Y-%m-%d') as exam_date, start_time, end_time FROM exams WHERE id = ?", [req.params.id]);
-            examDateStr = examDataRow[0].exam_date;
-            startTime = examDataRow[0].start_time;
-            endTime = examDataRow[0].end_time;
+            if (!examDataRow || examDataRow.length === 0) {
+        return res.status(404).json({ message: "Exam data not found" });
+    }
+
+    const examData = examDataRow[0];
+
+    examDateStr = examData.exam_date;
+    startTime = examData.start_time;
+    endTime = examData.end_time;
+
         }
 
         const examStart = new Date(`${examDateStr}T${startTime}`);
@@ -234,7 +241,7 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
         res.json({
             message: 'Exam started',
             attemptId,
-            exam: { duration_minutes: durationMinutes, end_time: exam[0].end_time, exam_date: exam[0].exam_date },
+exam: { duration_minutes: durationMinutes, end_time: endTime, exam_date: examDateStr },
             questions: finalQuestions
         });
     } catch (error) {
