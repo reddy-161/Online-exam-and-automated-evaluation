@@ -213,8 +213,8 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
 
         }
 
-       const examStart = new Date(`${examDateStr} ${startTime}`);
-const examEnd = new Date(`${examDateStr} ${endTime}`);
+       const examStart = new Date(`${examDateStr}T${startTime}+05:30`);
+const examEnd = new Date(`${examDateStr}T${endTime}+05:30`);
 
         console.log(`[Exam Check] Student: ${req.user.id}, Exam: ${req.params.id}`);
         console.log(`[Exam Check] Now: ${now.toISOString()}`);
