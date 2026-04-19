@@ -213,17 +213,23 @@ router.post('/:id/attempt', authenticateToken, requireRole('student'), async (re
 
         }
 
-       const examStart = new Date(`${examDateStr}T${startTime}+05:30`);
-const examEnd = new Date(`${examDateStr}T${endTime}+05:30`);
+       const now = Date.now();
+
+const examStart = new Date(`${examDateStr}T${startTime}+05:30`).getTime();
+const examEnd = new Date(`${examDateStr}T${endTime}+05:30`).getTime();
 
         console.log(`[Exam Check] Student: ${req.user.id}, Exam: ${req.params.id}`);
         console.log(`[Exam Check] Now: ${now.toISOString()}`);
         console.log(`[Exam Check] Start: ${examStart.toISOString()} (${examDateStr} T ${startTime})`);
         console.log(`[Exam Check] End: ${examEnd.toISOString()} (${examDateStr} T ${endTime})`);
 
-        if (now < examStart) return res.status(403).json({ message: 'Exam has not started yet.' });
-        if (now > examEnd) return res.status(403).json({ message: 'Exam window has closed.' });
+        if (now < examStart) {
+  return res.status(403).json({ message: 'Exam has not started yet.' });
+}
 
+if (now > examEnd) {
+  return res.status(403).json({ message: 'Exam window has closed.' });
+}
         const [result] = await pool.execute(
             "INSERT INTO exam_attempts (exam_id, student_id, status) VALUES (?, ?, 'inprogress')",
             [req.params.id, req.user.id]
