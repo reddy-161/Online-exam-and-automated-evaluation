@@ -280,7 +280,7 @@ const Login = () => {
                   <GraduationCap size={28} color="white" />
                 </div>
                 <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: 0, letterSpacing: '-0.5px', background: 'linear-gradient(to right, #818cf8, #34d399)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                  AutoGrade
+                  LearnifyX
                 </h1>
               </div>
               <h2 style={{ fontSize: '3rem', fontWeight: '800', lineHeight: '1.15', marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
